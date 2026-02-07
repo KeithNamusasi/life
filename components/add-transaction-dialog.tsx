@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -44,32 +44,21 @@ const formSchema = z.object({
     type: z.enum(["income", "expense"]),
     category: z.string().min(1, "Category is required."),
     description: z.string().optional(),
-    date: z.string().optional(),
 })
 
-// Default categories if none from database
-const defaultIncomeCategories = [
+const incomeCategories = [
     "Salary", "Freelance", "Investment", "Gift", "Bonus", "Other Income"
 ]
 
-const defaultExpenseCategories = [
+const expenseCategories = [
     "Groceries", "Food & Dining", "Transport", "Utilities", "Shopping", 
     "Entertainment", "Health", "Education", "Subscriptions", "Insurance", "Other"
 ]
-
-interface Category {
-    id: string
-    name: string
-    icon?: string
-    color?: string
-    type: string
-}
 
 export function AddTransactionDialog() {
     const [open, setOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [success, setSuccess] = useState(false)
-    const [categories, setCategories] = useState<Category[]>([])
     const router = useRouter()
     const supabase = createClient()
 
@@ -80,44 +69,11 @@ export function AddTransactionDialog() {
             type: "expense",
             category: "",
             description: "",
-            date: new Date().toISOString().split('T')[0],
         },
     })
 
     const transactionType = form.watch("type")
-
-    // Fetch categories from database
-    useEffect(() => {
-        const fetchCategories = async () => {
-            const { data, error } = await supabase
-                .from('categories')
-                .select('id, name, icon, color, type')
-                .order('name')
-            
-            if (data && !error) {
-                setCategories(data)
-            }
-        }
-        
-        if (open) {
-            fetchCategories()
-        }
-    }, [open, supabase])
-
-    // Get categories based on type
-    const getCategories = () => {
-        const filtered = categories.filter(c => 
-            c.type === transactionType || c.type === 'both'
-        )
-        
-        if (filtered.length > 0) {
-            return filtered.map(c => c.name)
-        }
-        
-        return transactionType === "income" 
-            ? defaultIncomeCategories 
-            : defaultExpenseCategories
-    }
+    const categories = transactionType === "income" ? incomeCategories : expenseCategories
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)
@@ -125,26 +81,41 @@ export function AddTransactionDialog() {
             const { data: { user } } = await supabase.auth.getUser()
 
             if (!user) {
-                toast.error("You must be logged in to add a transaction.")
+                toast.error("Please log in first")
                 return
             }
 
-            // Get category ID if exists
-            const categoryData = categories.find(c => c.name === values.category)
-            
-            const { error } = await supabase.from("transactions").insert({
+            // Try to insert with full schema first
+            const transactionData = {
                 user_id: user.id,
                 amount: parseFloat(values.amount),
                 type: values.type,
-                category_id: categoryData?.id || null,
                 category: values.category,
-                description: values.description,
-                source: "web",
-                date: values.date || new Date().toISOString().split('T')[0],
-            })
+                description: values.description || null,
+                source: "web" as const,
+            }
 
-            if (error) {
-                throw error
+            const { error: firstError } = await supabase
+                .from("transactions")
+                .insert(transactionData)
+
+            // If that fails, try without category_id field (old schema)
+            if (firstError) {
+                console.log("First insert failed, trying simplified format...")
+                const { error: secondError } = await supabase
+                    .from("transactions")
+                    .insert({
+                        user_id: user.id,
+                        amount: parseFloat(values.amount),
+                        type: values.type,
+                        category: values.category,
+                        description: values.description || null,
+                        source: "web",
+                    })
+                
+                if (error2) {
+                    throw error2
+                }
             }
 
             setSuccess(true)
@@ -157,9 +128,19 @@ export function AddTransactionDialog() {
                 setOpen(false)
                 router.refresh()
             }, 1500)
-        } catch (error) {
-            console.error(error)
-            toast.error("Failed to add transaction.")
+        } catch (error: any) {
+            console.error("Transaction error:", error)
+            
+            // More helpful error message
+            if (error?.message?.includes('row-level security')) {
+                toast.error("Please log in and try again")
+            } else if (error?.message?.includes('foreign key') || error?.message?.includes('category')) {
+                toast.error("Database not configured. Please run the SQL schema in Supabase.")
+            } else if (error?.message?.includes('duplicate')) {
+                toast.error("Transaction already exists")
+            } else {
+                toast.error("Failed to add transaction. Make sure the database is set up.")
+            }
         } finally {
             setIsLoading(false)
         }
@@ -200,7 +181,6 @@ export function AddTransactionDialog() {
                         </DialogHeader>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                                {/* Type and Date */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
                                         control={form.control}
@@ -233,46 +213,25 @@ export function AddTransactionDialog() {
                                     />
                                     <FormField
                                         control={form.control}
-                                        name="date"
+                                        name="amount"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Date</FormLabel>
+                                                <FormLabel>Amount</FormLabel>
                                                 <FormControl>
-                                                    <Input 
-                                                        type="date" 
-                                                        {...field} 
-                                                        className="h-11"
-                                                    />
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                                        <Input 
+                                                            placeholder="0.00" 
+                                                            {...field} 
+                                                            className="pl-7 h-11"
+                                                        />
+                                                    </div>
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
                                 </div>
-
-                                {/* Amount */}
-                                <FormField
-                                    control={form.control}
-                                    name="amount"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Amount</FormLabel>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                                    <Input 
-                                                        placeholder="0.00" 
-                                                        {...field} 
-                                                        className="pl-7 h-11"
-                                                    />
-                                                </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                {/* Category */}
                                 <FormField
                                     control={form.control}
                                     name="category"
@@ -286,7 +245,7 @@ export function AddTransactionDialog() {
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    {getCategories().map((cat) => (
+                                                    {categories.map((cat) => (
                                                         <SelectItem key={cat} value={cat}>
                                                             {cat}
                                                         </SelectItem>
@@ -297,8 +256,6 @@ export function AddTransactionDialog() {
                                         </FormItem>
                                     )}
                                 />
-
-                                {/* Description */}
                                 <FormField
                                     control={form.control}
                                     name="description"
@@ -316,7 +273,6 @@ export function AddTransactionDialog() {
                                         </FormItem>
                                     )}
                                 />
-
                                 <DialogFooter>
                                     <Button 
                                         type="submit" 
