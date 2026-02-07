@@ -54,7 +54,7 @@ export default async function DashboardPage() {
                     </h2>
                     <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
                         <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
-                        Here's what's happening with your finances today.
+                        {`Here's what's happening with your finances today.`}
                     </p>
                 </div>
                 <div className="sm:hidden">
