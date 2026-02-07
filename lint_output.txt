@@ -1,0 +1,48 @@
+
+> life-os@0.1.0 lint
+> eslint
+
+
+/home/mr-software/Desktop/life/life-os/app/dashboard/layout.tsx
+  2:10  warning  'Separator' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/mr-software/Desktop/life/life-os/components/dashboard-nav.tsx
+  6:10  warning  'Button' is defined but never used  @typescript-eslint/no-unused-vars
+  7:46  warning  'LogOut' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/mr-software/Desktop/life/life-os/components/transaction-list.tsx
+  41:21  warning  'payload' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  42:21  error    Error: Cannot access variable before it is declared
+
+`fetchData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+/home/mr-software/Desktop/life/life-os/components/transaction-list.tsx:42:21
+  40 |                     table: 'transactions'
+  41 |                 }, (payload) => {
+> 42 |                     fetchData()
+     |                     ^^^^^^^^^ `fetchData` accessed before it is declared
+  43 |                 })
+  44 |                 .subscribe()
+  45 |
+
+/home/mr-software/Desktop/life/life-os/components/transaction-list.tsx:56:5
+  54 |     }, [])
+  55 |
+> 56 |     async function fetchData() {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 57 |         setLoading(true)
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+> 58 |         const { data, error } = await supabase
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+> 69 |         setLoading(false)
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+> 70 |     }
+     | ^^^^^^ `fetchData` is declared here
+  71 |
+  72 |     if (loading) {
+  73 |         return <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>  react-hooks/immutability
+  54:8   warning  React Hook useEffect has missing dependencies: 'fetchData' and 'supabase'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+
+✖ 6 problems (1 error, 5 warnings)
+
