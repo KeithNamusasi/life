@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -44,21 +44,32 @@ const formSchema = z.object({
     type: z.enum(["income", "expense"]),
     category: z.string().min(1, "Category is required."),
     description: z.string().optional(),
+    date: z.string().optional(),
 })
 
-const incomeCategories = [
+// Default categories if none from database
+const defaultIncomeCategories = [
     "Salary", "Freelance", "Investment", "Gift", "Bonus", "Other Income"
 ]
 
-const expenseCategories = [
-    "Groceries", "Entertainment", "Transport", "Utilities", "Dining", 
-    "Shopping", "Health", "Education", "Subscriptions", "Other"
+const defaultExpenseCategories = [
+    "Groceries", "Food & Dining", "Transport", "Utilities", "Shopping", 
+    "Entertainment", "Health", "Education", "Subscriptions", "Insurance", "Other"
 ]
+
+interface Category {
+    id: string
+    name: string
+    icon?: string
+    color?: string
+    type: string
+}
 
 export function AddTransactionDialog() {
     const [open, setOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [categories, setCategories] = useState<Category[]>([])
     const router = useRouter()
     const supabase = createClient()
 
@@ -69,11 +80,44 @@ export function AddTransactionDialog() {
             type: "expense",
             category: "",
             description: "",
+            date: new Date().toISOString().split('T')[0],
         },
     })
 
     const transactionType = form.watch("type")
-    const categories = transactionType === "income" ? incomeCategories : expenseCategories
+
+    // Fetch categories from database
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const { data, error } = await supabase
+                .from('categories')
+                .select('id, name, icon, color, type')
+                .order('name')
+            
+            if (data && !error) {
+                setCategories(data)
+            }
+        }
+        
+        if (open) {
+            fetchCategories()
+        }
+    }, [open, supabase])
+
+    // Get categories based on type
+    const getCategories = () => {
+        const filtered = categories.filter(c => 
+            c.type === transactionType || c.type === 'both'
+        )
+        
+        if (filtered.length > 0) {
+            return filtered.map(c => c.name)
+        }
+        
+        return transactionType === "income" 
+            ? defaultIncomeCategories 
+            : defaultExpenseCategories
+    }
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)
@@ -85,13 +129,18 @@ export function AddTransactionDialog() {
                 return
             }
 
+            // Get category ID if exists
+            const categoryData = categories.find(c => c.name === values.category)
+            
             const { error } = await supabase.from("transactions").insert({
                 user_id: user.id,
                 amount: parseFloat(values.amount),
                 type: values.type,
+                category_id: categoryData?.id || null,
                 category: values.category,
                 description: values.description,
                 source: "web",
+                date: values.date || new Date().toISOString().split('T')[0],
             })
 
             if (error) {
@@ -151,6 +200,7 @@ export function AddTransactionDialog() {
                         </DialogHeader>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                                {/* Type and Date */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
                                         control={form.control}
@@ -183,25 +233,46 @@ export function AddTransactionDialog() {
                                     />
                                     <FormField
                                         control={form.control}
-                                        name="amount"
+                                        name="date"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Amount</FormLabel>
+                                                <FormLabel>Date</FormLabel>
                                                 <FormControl>
-                                                    <div className="relative">
-                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                                        <Input 
-                                                            placeholder="0.00" 
-                                                            {...field} 
-                                                            className="pl-7 h-11"
-                                                        />
-                                                    </div>
+                                                    <Input 
+                                                        type="date" 
+                                                        {...field} 
+                                                        className="h-11"
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
                                 </div>
+
+                                {/* Amount */}
+                                <FormField
+                                    control={form.control}
+                                    name="amount"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Amount</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                                    <Input 
+                                                        placeholder="0.00" 
+                                                        {...field} 
+                                                        className="pl-7 h-11"
+                                                    />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {/* Category */}
                                 <FormField
                                     control={form.control}
                                     name="category"
@@ -215,7 +286,7 @@ export function AddTransactionDialog() {
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    {categories.map((cat) => (
+                                                    {getCategories().map((cat) => (
                                                         <SelectItem key={cat} value={cat}>
                                                             {cat}
                                                         </SelectItem>
@@ -226,6 +297,8 @@ export function AddTransactionDialog() {
                                         </FormItem>
                                     )}
                                 />
+
+                                {/* Description */}
                                 <FormField
                                     control={form.control}
                                     name="description"
@@ -243,6 +316,7 @@ export function AddTransactionDialog() {
                                         </FormItem>
                                     )}
                                 />
+
                                 <DialogFooter>
                                     <Button 
                                         type="submit" 
