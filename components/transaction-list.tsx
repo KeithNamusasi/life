@@ -51,13 +51,16 @@ function getCategoryIcon(category: string): string {
 export function TransactionList() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     // Use stable instance of supabase client to avoid effect re-running
     const [supabase] = useState(() => createClient())
 
     useEffect(() => {
         const fetchTransactions = async () => {
             setLoading(true)
+            setError(null)
             try {
+                // Try public schema first (new setup)
                 const { data, error } = await supabase
                     .from('transactions')
                     .select('*')
@@ -65,12 +68,26 @@ export function TransactionList() {
                     .limit(10)
 
                 if (error) {
-                    // Table might not exist yet - this is expected for new users
-                    if (error.code === '42P01') { // undefined_table
-                        console.log('Transactions table not found - this is expected for new users')
-                        setTransactions([])
+                    console.log('First fetch attempt error:', error.message)
+                    
+                    // Try life_os schema (old setup)
+                    const { data: data2, error: error2 } = await supabase
+                        .from('transactions')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                    
+                    if (error2) {
+                        // Table might not exist yet - this is expected for new users
+                        if (error2.code === '42P01' || error2.message.includes('undefined_table')) {
+                            console.log('Transactions table not found - this is expected for new users')
+                            setTransactions([])
+                        } else {
+                            console.warn('Error fetching transactions:', error2.message)
+                            setError('Database not set up. Run the SQL schema in Supabase.')
+                        }
                     } else {
-                        console.warn('Error fetching transactions:', error.message)
+                        setTransactions(data2 || [])
                     }
                 } else {
                     setTransactions(data || [])
@@ -90,13 +107,12 @@ export function TransactionList() {
             .channel('realtime transactions')
             .on('postgres_changes', {
                 event: '*',
-                schema: 'life_os',
+                schema: 'public',
                 table: 'transactions'
             }, () => {
                 fetchTransactions()
             })
             .subscribe((status) => {
-                // Only log subscription errors, not expected failures
                 if (status === 'SUBSCRIBED') {
                     console.log('Realtime subscription active')
                 }
@@ -118,11 +134,26 @@ export function TransactionList() {
         )
     }
 
+    if (error) {
+        return (
+            <div className="text-center py-8">
+                <div className="text-4xl mb-2">⚠️</div>
+                <p className="text-muted-foreground mb-2">{error}</p>
+                <p className="text-sm text-muted-foreground">
+                    Go to Supabase SQL Editor and run the setup.sql script.
+                </p>
+            </div>
+        )
+    }
+
     if (transactions.length === 0) {
         return (
             <div className="text-center py-8">
                 <div className="text-4xl mb-2">📊</div>
                 <p className="text-muted-foreground">No transactions recorded yet.</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                    Click &quot;Add Transaction&quot; to get started!
+                </p>
             </div>
         )
     }

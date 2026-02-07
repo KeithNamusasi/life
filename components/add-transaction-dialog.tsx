@@ -113,8 +113,8 @@ export function AddTransactionDialog() {
                         source: "web",
                     })
                 
-                if (error2) {
-                    throw error2
+                if (secondError) {
+                    throw secondError
                 }
             }
 
@@ -128,16 +128,26 @@ export function AddTransactionDialog() {
                 setOpen(false)
                 router.refresh()
             }, 1500)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Transaction error:", error)
             
             // More helpful error message
-            if (error?.message?.includes('row-level security')) {
-                toast.error("Please log in and try again")
-            } else if (error?.message?.includes('foreign key') || error?.message?.includes('category')) {
-                toast.error("Database not configured. Please run the SQL schema in Supabase.")
-            } else if (error?.message?.includes('duplicate')) {
-                toast.error("Transaction already exists")
+            if (
+                typeof error === "object" &&
+                error !== null &&
+                "message" in error &&
+                typeof (error as { message?: string }).message === "string"
+            ) {
+                const message = (error as { message: string }).message;
+                if (message.includes('row-level security')) {
+                    toast.error("Please log in and try again")
+                } else if (message.includes('foreign key') || message.includes('category')) {
+                    toast.error("Database not configured. Please run the SQL schema in Supabase.")
+                } else if (message.includes('duplicate')) {
+                    toast.error("Transaction already exists")
+                } else {
+                    toast.error("Failed to add transaction. Make sure the database is set up.")
+                }
             } else {
                 toast.error("Failed to add transaction. Make sure the database is set up.")
             }

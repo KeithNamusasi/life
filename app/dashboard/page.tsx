@@ -15,43 +15,95 @@ export default async function DashboardPage() {
         redirect("/auth/login")
     }
 
-    const { data: profile } = await supabase
-        .from('users')
-        .select('full_name')
-        .eq('id', user.id)
-        .single()
+    // Try to fetch profile - handle errors gracefully
+    let profile = null
+    let transactions: Transaction[] = []
+    let profileError = false
+    let transactionsError = false
 
-    const { data: transactions } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+    interface Transaction {
+        id: string
+        created_at: string
+        amount: number
+        type: 'income' | 'expense'
+        category: string
+        description: string
+        source: 'web' | 'whatsapp'
+    }
+
+    try {
+        const { data: profileData } = await supabase
+            .from('users')
+            .select('full_name')
+            .eq('id', user.id)
+            .single()
+        profile = profileData
+    } catch {
+        profileError = true
+    }
+
+    try {
+        const { data: transactionsData } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+        transactions = transactionsData || []
+    } catch {
+        transactionsError = true
+    }
 
     const income = transactions
-        ?.filter(t => t.type === 'income')
+        .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + Number(t.amount), 0) || 0
 
     const expense = transactions
-        ?.filter(t => t.type === 'expense')
+        .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + Number(t.amount), 0) || 0
 
     const balance = income - expense
 
     const userName = profile?.full_name || user.email?.split('@')[0] || 'User'
-    const hasTransactions = transactions && transactions.length > 0
+    const hasTransactions = transactions.length > 0
 
     // Calculate percentage changes (mock for now)
     const incomeChange = income > 0 ? 12.5 : 0
     const expenseChange = expense > 0 ? -8.2 : 0
 
     // Get recent transactions for quick view
-    const recentTransactions = transactions?.slice(0, 5) || []
+    const recentTransactions = transactions.slice(0, 5)
 
     // Calculate savings rate
     const savingsRate = income > 0 ? ((balance / income) * 100).toFixed(1) : 0
 
+    // Show setup warning if there are database errors
+    const showSetupWarning = profileError || transactionsError
+
     return (
         <div className="space-y-6 pb-20 lg:pb-6">
+            {/* Setup Warning */}
+            {showSetupWarning && (
+                <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+                    <CardContent className="flex flex-col items-center justify-center py-4 px-4">
+                        <div className="text-3xl mb-2">⚠️</div>
+                        <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-300 mb-1">
+                            Database Setup Required
+                        </h3>
+                        <p className="text-sm text-amber-600 dark:text-amber-400 text-center mb-2">
+                            The database tables are not set up yet. Click the button below to run the SQL setup.
+                        </p>
+                        <a 
+                            href="https://supabase.com/dashboard/project/_/sql" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-amber-700 dark:text-amber-300 hover:underline"
+                        >
+                            Open Supabase SQL Editor →
+                        </a>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Welcome Section */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="space-y-1">
@@ -60,7 +112,7 @@ export default async function DashboardPage() {
                     </h2>
                     <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
                         <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
-                        Here's your financial overview
+                        Here&apos;s your financial overview
                     </p>
                 </div>
                 <div className="sm:hidden">
@@ -161,7 +213,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Charts Section */}
-            {hasTransactions && (
+            {hasTransactions && !showSetupWarning && (
                 <>
                     <Separator className="my-4" />
                     
@@ -175,7 +227,7 @@ export default async function DashboardPage() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <MonthlyTrend transactions={transactions || []} />
+                                <MonthlyTrend transactions={transactions} />
                             </CardContent>
                         </Card>
 
@@ -188,7 +240,7 @@ export default async function DashboardPage() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <SpendingChart transactions={transactions || []} type="expense" />
+                                <SpendingChart transactions={transactions} type="expense" />
                             </CardContent>
                         </Card>
                     </div>
