@@ -86,7 +86,7 @@ export default function SettingsPage() {
                 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
                 root.classList.add(systemTheme)
             } else {
-                root.class.add(theme)
+                root.classList.add(theme)
             }
         }
         
