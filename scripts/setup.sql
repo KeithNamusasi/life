@@ -5,6 +5,11 @@
 -- STEP 1: Create the schema (run once)
 -- ============================================
 
+-- Drop existing tables if you want to start fresh
+-- DROP TABLE IF EXISTS public.users CASCADE;
+-- DROP TABLE IF EXISTS public.transactions CASCADE;
+-- DROP TABLE IF EXISTS public.categories CASCADE;
+
 -- Create users table
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
@@ -48,6 +53,7 @@ ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- STEP 3: Create RLS Policies
+-- Important: These must check for auth.uid() to work with Supabase client
 -- ============================================
 
 -- Users table policies
@@ -82,9 +88,11 @@ CREATE POLICY "Users can delete own transactions" ON public.transactions
 DROP POLICY IF EXISTS "Users can view own categories" ON public.categories;
 DROP POLICY IF EXISTS "Users can manage own categories" ON public.categories;
 
+-- View all categories (default + own)
 CREATE POLICY "Users can view own categories" ON public.categories
   FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
 
+-- Manage own categories only
 CREATE POLICY "Users can manage own categories" ON public.categories
   FOR ALL USING (auth.uid() = user_id);
 
@@ -117,6 +125,7 @@ INSERT INTO public.categories (name, icon, color, type, is_default) VALUES
 
 -- ============================================
 -- STEP 5: Create a function to auto-create user profile
+-- This triggers when a new user signs up via Supabase Auth
 -- ============================================
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -135,8 +144,20 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================
+-- STEP 6: Enable uuid-ossp extension for uuid_generate_v4
+-- ============================================
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================
 -- VERIFICATION
 -- ============================================
 
 SELECT '✅ Setup complete! Tables created:' as status;
 SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users', 'transactions', 'categories');
+
+SELECT '📋 RLS Policies created:' as status;
+SELECT policyname, tablename FROM pg_policies WHERE schemaname = 'public';
+
+SELECT '🏷️ Default categories inserted:' as status;
+SELECT name, type, icon FROM public.categories WHERE is_default = true ORDER BY type;
