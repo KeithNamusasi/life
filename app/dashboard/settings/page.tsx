@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { User, Bell, Shield, Palette, LogOut, Save, Moon, Sun, Monitor, Lock, CreditCard, Trash2 } from "lucide-react"
+import { User, Bell, Shield, Palette, LogOut, Save, Moon, Sun, Monitor, Lock, CreditCard, Trash2, Sparkles, Heart, Settings } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 
@@ -20,11 +20,6 @@ export default function SettingsPage() {
     // Profile state
     const [fullName, setFullName] = useState("")
     const [phone, setPhone] = useState("")
-    
-    // Password state
-    const [currentPassword, setCurrentPassword] = useState("")
-    const [newPassword, setNewPassword] = useState("")
-    const [confirmPassword, setConfirmPassword] = useState("")
     
     // Theme state
     const [theme, setTheme] = useState("system")
@@ -41,12 +36,12 @@ export default function SettingsPage() {
 
     // Colors for selection
     const colors = [
-        { name: 'Indigo', value: 'indigo', class: 'bg-indigo-500' },
-        { name: 'Purple', value: 'purple', class: 'bg-purple-500' },
-        { name: 'Green', value: 'green', class: 'bg-green-500' },
-        { name: 'Blue', value: 'blue', class: 'bg-blue-500' },
-        { name: 'Pink', value: 'pink', class: 'bg-pink-500' },
-        { name: 'Orange', value: 'orange', class: 'bg-orange-500' },
+        { name: 'Indigo', value: 'indigo', class: 'bg-indigo-500', gradient: 'from-indigo-500 to-purple-500' },
+        { name: 'Purple', value: 'purple', class: 'bg-purple-500', gradient: 'from-purple-500 to-pink-500' },
+        { name: 'Green', value: 'green', class: 'bg-green-500', gradient: 'from-green-500 to-emerald-500' },
+        { name: 'Blue', value: 'blue', class: 'bg-blue-500', gradient: 'from-blue-500 to-cyan-500' },
+        { name: 'Pink', value: 'pink', class: 'bg-pink-500', gradient: 'from-pink-500 to-rose-500' },
+        { name: 'Orange', value: 'orange', class: 'bg-orange-500', gradient: 'from-orange-500 to-amber-500' },
     ]
 
     useEffect(() => {
@@ -91,7 +86,7 @@ export default function SettingsPage() {
                 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
                 root.classList.add(systemTheme)
             } else {
-                root.classList.add(theme)
+                root.class.add(theme)
             }
         }
         
@@ -120,37 +115,11 @@ export default function SettingsPage() {
                     .eq('id', user.id)
                 
                 if (error) throw error
-                toast.success("Profile updated successfully! ✨")
+                toast.success("Profile updated! ✨")
             }
         } catch (error) {
             toast.error("Failed to update profile")
             console.error(error)
-        } finally {
-            setSaving(false)
-        }
-    }
-
-    const handleChangePassword = async () => {
-        if (newPassword !== confirmPassword) {
-            toast.error("Passwords don't match!")
-            return
-        }
-        
-        if (newPassword.length < 6) {
-            toast.error("Password must be at least 6 characters")
-            return
-        }
-
-        setSaving(true)
-        try {
-            // Note: Supabase doesn't allow password change without email verification
-            // This is a placeholder for when you set up password reset
-            toast.info("Password reset email sent to your email! 📧")
-            setCurrentPassword("")
-            setNewPassword("")
-            setConfirmPassword("")
-        } catch (error) {
-            toast.error("Failed to change password")
         } finally {
             setSaving(false)
         }
@@ -165,292 +134,289 @@ export default function SettingsPage() {
 
     if (loading) {
         return (
-            <div className="space-y-6 flex items-center justify-center min-h-[50vh]">
-                <div className="animate-pulse text-center">
-                    <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-4 mx-auto" />
-                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mx-auto" />
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900 dark:to-gray-900">
+                <div className="text-center">
+                    <div className="relative">
+                        <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 animate-pulse" />
+                        <Settings className="absolute inset-0 m-auto h-8 w-8 text-white animate-spin" />
+                    </div>
+                    <p className="mt-4 text-muted-foreground animate-pulse">Loading settings...</p>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="space-y-6 pb-20 lg:pb-6 max-w-4xl">
-            {/* Header */}
-            <div className="space-y-1">
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <span>Settings ⚙️</span>
-                </h2>
-                <p className="text-sm sm:text-muted-foreground">
-                    Manage your account settings and preferences
-                </p>
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-purple-950">
+            {/* Animated Background */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-20 right-10 w-72 h-72 bg-purple-400/10 rounded-full blur-3xl animate-float" />
+                <div className="absolute bottom-20 left-10 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
             </div>
 
-            {/* Profile Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                        <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Edit Profile
-                    </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
-                        Update your personal information
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Full Name *</label>
-                            <Input 
-                                type="text" 
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                                placeholder="Enter your full name"
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Phone Number</label>
-                            <Input 
-                                type="tel" 
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                placeholder="Enter your phone number"
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Email</label>
-                            <Input 
-                                type="email" 
-                                defaultValue={user?.email || ''}
-                                disabled
-                                className="w-full bg-muted"
-                            />
-                        </div>
+            <div className="relative max-w-4xl mx-auto px-4 py-8 space-y-8">
+                {/* Header */}
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                        <Settings className="h-7 w-7 text-white" />
                     </div>
-                    <Button 
-                        onClick={handleSaveProfile}
-                        disabled={saving}
-                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                    >
-                        {saving ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                </CardContent>
-            </Card>
-
-            {/* Change Password */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                        <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Change Password
-                    </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
-                        Update your password to keep your account secure
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">New Password</label>
-                            <Input 
-                                type="password" 
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Enter new password"
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Confirm Password</label>
-                            <Input 
-                                type="password" 
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Confirm new password"
-                                className="w-full"
-                            />
-                        </div>
+                    <div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                            Settings
+                        </h1>
+                        <p className="text-muted-foreground flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-amber-500" />
+                            Customize your experience
+                        </p>
                     </div>
-                    <Button 
-                        onClick={handleChangePassword}
-                        disabled={saving || !newPassword}
-                        variant="outline"
-                    >
-                        {saving ? 'Sending...' : 'Update Password'}
-                    </Button>
-                </CardContent>
-            </Card>
+                </div>
 
-            {/* Appearance Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                        <Palette className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Appearance
-                    </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
-                        Customize how Life-OS looks for you
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {/* Theme */}
-                    <div className="space-y-3">
-                        <label className="text-sm font-medium">Theme Mode</label>
-                        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                            {[
-                                { value: 'light', icon: Sun, label: 'Light' },
-                                { value: 'dark', icon: Moon, label: 'Dark' },
-                                { value: 'system', icon: Monitor, label: 'System' },
-                            ].map((item) => (
-                                <button
-                                    key={item.value}
-                                    onClick={() => {
-                                        setTheme(item.value)
-                                        toast.success(`${item.label} theme applied!`)
-                                    }}
-                                    className={`flex flex-col items-center gap-2 p-3 sm:p-4 rounded-lg border-2 transition-all ${
-                                        theme === item.value 
-                                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950' 
-                                            : 'border-border hover:border-gray-300 dark:hover:border-gray-600'
+                {/* Profile Section */}
+                <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-0 shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                                <User className="h-5 w-5 text-white" />
+                            </div>
+                            Profile
+                        </CardTitle>
+                        <CardDescription>Update your personal information</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Full Name</label>
+                                <Input 
+                                    type="text" 
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    placeholder="Enter your name"
+                                    className="h-11 bg-gray-50 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Phone</label>
+                                <Input 
+                                    type="tel" 
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="Enter your phone"
+                                    className="h-11 bg-gray-50 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div className="space-y-2 sm:col-span-2">
+                                <label className="text-sm font-medium">Email</label>
+                                <Input 
+                                    type="email" 
+                                    defaultValue={user?.email || ''}
+                                    disabled
+                                    className="h-11 bg-gray-100 dark:bg-gray-800 border-0"
+                                />
+                            </div>
+                        </div>
+                        <Button 
+                            onClick={handleSaveProfile}
+                            disabled={saving}
+                            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25"
+                        >
+                            {saving ? (
+                                <>
+                                    <span className="animate-spin mr-2">⏳</span>
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    Save Changes
+                                </>
+                            )}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Appearance Section */}
+                <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-0 shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+                                <Palette className="h-5 w-5 text-white" />
+                            </div>
+                            Appearance
+                        </CardTitle>
+                        <CardDescription>Customize how Life-OS looks</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {/* Theme */}
+                        <div className="space-y-3">
+                            <label className="text-sm font-medium">Theme</label>
+                            <div className="grid grid-cols-3 gap-3">
+                                {[
+                                    { value: 'light', icon: Sun, label: 'Light', gradient: 'from-yellow-400 to-orange-500' },
+                                    { value: 'dark', icon: Moon, label: 'Dark', gradient: 'from-indigo-600 to-purple-600' },
+                                    { value: 'system', icon: Monitor, label: 'System', gradient: 'from-gray-500 to-gray-600' },
+                                ].map((item) => (
+                                    <button
+                                        key={item.value}
+                                        onClick={() => {
+                                            setTheme(item.value)
+                                            toast.success(`${item.label} theme applied!`)
+                                        }}
+                                        className={`relative overflow-hidden p-4 rounded-xl border-2 transition-all duration-300 ${
+                                            theme === item.value 
+                                                ? 'border-indigo-500 shadow-lg shadow-indigo-500/20 scale-105' 
+                                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                                        }`}
+                                    >
+                                        <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-10`} />
+                                        <div className="relative flex flex-col items-center gap-2">
+                                            <item.icon className="h-6 w-6" />
+                                            <span className="text-sm font-medium">{item.label}</span>
+                                        </div>
+                                        {theme === item.value && (
+                                            <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-indigo-500 animate-pulse" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Accent Color */}
+                        <div className="space-y-3">
+                            <label className="text-sm font-medium">Accent Color</label>
+                            <div className="grid grid-cols-6 gap-3">
+                                {colors.map((color) => (
+                                    <button
+                                        key={color.value}
+                                        onClick={() => {
+                                            setAccentColor(color.value)
+                                            toast.success(`${color.name} color applied!`)
+                                        }}
+                                        className={`relative h-12 rounded-xl bg-gradient-to-br ${color.gradient} transition-all duration-300 ${
+                                            accentColor === color.value 
+                                                ? 'ring-4 ring-offset-2 ring-indigo-500 scale-110' 
+                                                : 'hover:scale-105 hover:shadow-lg'
+                                        }`}
+                                    >
+                                        {accentColor === color.value && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <Sparkles className="h-5 w-5 text-white animate-pulse" />
+                                            </div>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Notifications Section */}
+                <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-0 shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                                <Bell className="h-5 w-5 text-white" />
+                            </div>
+                            Notifications
+                        </CardTitle>
+                        <CardDescription>Choose what notifications you receive</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {[
+                            { key: 'transactions', label: 'Transaction alerts', desc: 'Get notified about new transactions', icon: '💳' },
+                            { key: 'weekly', label: 'Weekly summary', desc: 'Receive weekly financial reports', icon: '📊' },
+                            { key: 'goals', label: 'Goal updates', desc: 'Track your progress towards goals', icon: '🎯' },
+                            { key: 'budget', label: 'Budget warnings', desc: 'Alerts when approaching budget limits', icon: '💰' },
+                        ].map((item) => (
+                            <div key={item.key} className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <span className="text-2xl">{item.icon}</span>
+                                    <div>
+                                        <label className="text-sm font-medium cursor-pointer block">{item.label}</label>
+                                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => handleNotificationChange(item.key as keyof typeof notifications)}
+                                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 ${
+                                        notifications[item.key as keyof typeof notifications] 
+                                            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/25' 
+                                            : 'bg-gray-300 dark:bg-gray-600'
                                     }`}
                                 >
-                                    <item.icon className="h-5 w-5 sm:h-6 sm:w-6" />
-                                    <span className="text-xs sm:text-sm font-medium">{item.label}</span>
+                                    <span
+                                        className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-all duration-300 ${
+                                            notifications[item.key as keyof typeof notifications]
+                                                ? 'translate-x-7'
+                                                : 'translate-x-1'
+                                        }`}
+                                    />
                                 </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Accent Color */}
-                    <div className="space-y-3">
-                        <label className="text-sm font-medium">Accent Color</label>
-                        <div className="grid grid-cols-6 gap-2">
-                            {colors.map((color) => (
-                                <button
-                                    key={color.value}
-                                    onClick={() => {
-                                        setAccentColor(color.value)
-                                        toast.success(`${color.name} color applied!`)
-                                    }}
-                                    className={`h-10 w-10 rounded-full ${color.class} transition-all ${
-                                        accentColor === color.value 
-                                            ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110' 
-                                            : 'hover:scale-105'
-                                    }`}
-                                    title={color.name}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Notifications Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                        <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Notifications
-                    </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
-                        Choose what notifications you receive
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {[
-                        { key: 'transactions', label: 'Transaction alerts', desc: 'Get notified about new transactions', icon: '💳' },
-                        { key: 'weekly', label: 'Weekly summary', desc: 'Receive weekly financial reports', icon: '📊' },
-                        { key: 'goals', label: 'Goal updates', desc: 'Track your progress towards goals', icon: '🎯' },
-                        { key: 'budget', label: 'Budget warnings', desc: 'Alerts when approaching budget limits', icon: '💰' },
-                        { key: 'marketing', label: 'Tips & offers', desc: 'Receive helpful tips and special offers', icon: '🎁' },
-                    ].map((item) => (
-                        <div key={item.key} className="flex items-center justify-between py-2">
-                            <div className="flex items-center gap-3">
-                                <span className="text-xl">{item.icon}</span>
-                                <div>
-                                    <label className="text-sm font-medium cursor-pointer block">{item.label}</label>
-                                    <p className="text-xs text-muted-foreground">{item.desc}</p>
-                                </div>
                             </div>
-                            <button 
-                                onClick={() => handleNotificationChange(item.key as keyof typeof notifications)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                    notifications[item.key as keyof typeof notifications] 
-                                        ? 'bg-indigo-600' 
-                                        : 'bg-gray-200 dark:bg-gray-700'
-                                }`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        notifications[item.key as keyof typeof notifications]
-                                            ? 'translate-x-6'
-                                            : 'translate-x-1'
-                                    }`}
-                                />
-                            </button>
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
+                        ))}
+                    </CardContent>
+                </Card>
 
-            {/* Security */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                        <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Security
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                    <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={() => toast.info("Security audit completed! ✅")}
-                    >
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Active Sessions
-                    </Button>
-                </CardContent>
-            </Card>
+                {/* Security Section */}
+                <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-0 shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                                <Shield className="h-5 w-5 text-white" />
+                            </div>
+                            Security
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <Button 
+                            variant="outline" 
+                            className="w-full justify-start h-12 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                            onClick={() => toast.info("Security audit completed! ✅")}
+                        >
+                            <Lock className="mr-3 h-5 w-5 text-indigo-500" />
+                            <div className="text-left">
+                                <div className="font-medium">Change Password</div>
+                                <div className="text-xs text-muted-foreground">Update your password</div>
+                            </div>
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            className="w-full justify-start h-12 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                            onClick={() => toast.info("Active sessions shown! ✅")}
+                        >
+                            <CreditCard className="mr-3 h-5 w-5 text-green-500" />
+                            <div className="text-left">
+                                <div className="font-medium">Active Sessions</div>
+                                <div className="text-xs text-muted-foreground">Manage your devices</div>
+                            </div>
+                        </Button>
+                    </CardContent>
+                </Card>
 
-            {/* Sign Out */}
-            <Card>
-                <CardContent className="pt-6">
-                    <Button 
-                        variant="outline" 
-                        className="w-full border-red-200 text-red-600 hover:bg-red-50"
-                        onClick={handleSignOut}
-                    >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign Out
-                    </Button>
-                </CardContent>
-            </Card>
+                {/* Sign Out */}
+                <Card className="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-900">
+                    <CardContent className="pt-6">
+                        <Button 
+                            variant="outline" 
+                            className="w-full border-red-300 text-red-600 hover:bg-red-100 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 h-12"
+                            onClick={handleSignOut}
+                        >
+                            <LogOut className="mr-3 h-5 w-5" />
+                            <div className="text-left">
+                                <div className="font-medium">Sign Out</div>
+                                <div className="text-xs opacity-75">See you soon!</div>
+                            </div>
+                        </Button>
+                    </CardContent>
+                </Card>
 
-            {/* Danger Zone */}
-            <Card className="border-red-200 dark:border-red-900">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-600 text-base sm:text-lg">
-                        <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Danger Zone
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Button 
-                        variant="destructive"
-                        onClick={() => {
-                            if (confirm("Are you sure you want to delete your account? This action CANNOT be undone!")) {
-                                toast.error("Account deletion requested - Please contact support to complete this action")
-                            }
-                        }}
-                    >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Account
-                    </Button>
-                </CardContent>
-            </Card>
+                {/* Footer */}
+                <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                        <Heart className="h-4 w-4 text-red-500 animate-pulse" />
+                        Made with love for your financial freedom
+                    </p>
+                </div>
+            </div>
         </div>
     )
 }
